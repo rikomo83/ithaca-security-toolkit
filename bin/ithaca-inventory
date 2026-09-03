@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CONF="/opt/ithaca-security/config/ithaca.conf"
+[ -f "$CONF" ] && source "$CONF"
+
+NOW="$(date '+%Y-%m-%d_%H-%M-%S')"
+REPORT_DIR="${REPORTS:-/opt/ithaca-security/reports}"
+REPORT="$REPORT_DIR/inventory-$NOW.md"
+LATEST="$REPORT_DIR/inventory-latest.md"
+
+mkdir -p "$REPORT_DIR"
+
+section() {
+  echo "" >> "$REPORT"
+  echo "## $1" >> "$REPORT"
+  echo "" >> "$REPORT"
+}
+
+cmd() {
+  echo '```text' >> "$REPORT"
+  bash -c "$1" >> "$REPORT" 2>&1 || true
+  echo '```' >> "$REPORT"
+  echo "" >> "$REPORT"
+}
+
+{
+  echo "# Ithaca Server Inventory"
+  echo ""
+  echo "- Date: $(date)"
+  echo "- Hostname: $(hostname -f 2>/dev/null || hostname)"
+  echo "- Company: ${COMPANY:-ITHACA}"
+  echo "- Role: ${SERVER_ROLE:-Unknown}"
+} > "$REPORT"
+
+section "Operating System"
+cmd "lsb_release -a 2>/dev/null || cat /etc/os-release"
+cmd "uname -a"
+cmd "uptime"
+
+section "Hardware"
+cmd "lscpu | egrep 'Model name|CPU\\(s\\)|Thread|Core|Socket|Vendor'"
+cmd "free -h"
+cmd "lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT,MODEL"
+cmd "df -hT"
+cmd "df -ih"
+
+section "Network"
+cmd "ip -br addr"
+cmd "ip route"
+cmd "resolvectl status | sed -n '1,120p'"
+cmd "ss -tulpn"
+
+section "Firewall"
+cmd "ufw status verbose"
+cmd "ufw status numbered"
+
+section "Fail2Ban"
+cmd "fail2ban-client status"
+cmd "for j in \$(fail2ban-client status 2>/dev/null | sed -n 's/.*Jail list:[[:space:]]*//p' | tr ',' ' '); do echo '---' \$j; fail2ban-client status \$j; done"
+
+section "SSH"
+cmd "sshd -T | egrep 'permitrootlogin|passwordauthentication|pubkeyauthentication|allowusers|maxauthtries|logingracetime|x11forwarding|allowtcpforwarding|allowagentforwarding'"
+
+section "Apache"
+cmd "apache2 -v"
+cmd "apache2ctl configtest"
+cmd "apache2ctl -M"
+cmd "apache2ctl -S"
+cmd "grep -R 'ServerName\\|ServerAlias\\|DocumentRoot\\|SSLCertificateFile' /etc/apache2/sites-enabled/"
+
+section "Certificates"
+cmd "certbot certificates"
+
+section "PostgreSQL"
+cmd "systemctl status postgresql --no-pager"
+cmd "pg_lsclusters 2>/dev/null || true"
+cmd "ss -tulpn | grep 5432 || true"
+
+section "GeoServer / Java"
+cmd "ss -tulpn | grep -E ':8080|java' || true"
+cmd "java -version"
+
+section "Azure Arc"
+cmd "systemctl status himds --no-pager || true"
+cmd "systemctl status GCArcService --no-pager || true"
+cmd "azcmagent show 2>/dev/null || true"
+
+section "Systemd Failed Services"
+cmd "systemctl --failed --no-pager"
+
+section "Cron"
+cmd "ls -la /etc/cron.*"
+cmd "crontab -l 2>/dev/null || true"
+
+ln -sf "$REPORT" "$LATEST"
+
+echo "Inventory created:"
+echo "$REPORT"
+echo "$LATEST"
