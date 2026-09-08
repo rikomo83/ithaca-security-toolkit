@@ -48,6 +48,7 @@ echo "======================================"
 ithaca_core_init
 source "$ITHACA_BASE_DIR/modules-v12/system.sh"
 source "$ITHACA_BASE_DIR/modules-v12/firewall.sh"
+source "$ITHACA_BASE_DIR/modules-v12/fail2ban.sh"
 _ithaca_registry_lock
 
 section "SYSTEM"
@@ -68,7 +69,37 @@ if [[ "${ITHACA_ADAPTER_DEBUG:-no}" == "yes" ]]; then
     printf '[v1.2 cutover] firewall active: results=1\n' >&2
 fi
 
-check_fail2ban
+fail2ban_fragment="$(mktemp)" || exit 4
+trap 'rm -f "$fail2ban_fragment"' EXIT INT TERM
+
+check_fail2ban > "$fail2ban_fragment"
+cat "$fail2ban_fragment"
+
+_ithaca_results_reset
+if ! legacy_parse_fragment "$fail2ban_fragment" fail2ban; then
+    printf '[v1.2 shadow] ERROR: %s\n' "$ITHACA_ERROR_MESSAGE" >&2
+    exit 4
+fi
+legacy_fail2ban_statuses=("${ITHACA_RESULT_STATUSES[@]}")
+legacy_fail2ban_messages=("${ITHACA_RESULT_MESSAGES[@]}")
+
+_ithaca_results_reset
+_ithaca_run_registered_check_id "fail2ban.status"
+v12_fail2ban_statuses=("${ITHACA_RESULT_STATUSES[@]}")
+v12_fail2ban_messages=("${ITHACA_RESULT_MESSAGES[@]}")
+
+if _ithaca_shadow_compare \
+    legacy_fail2ban_statuses legacy_fail2ban_messages \
+    v12_fail2ban_statuses v12_fail2ban_messages; then
+    if [[ "${ITHACA_ADAPTER_DEBUG:-no}" == "yes" ]]; then
+        printf '[v1.2 shadow] fail2ban parity OK: results=%s\n' \
+            "${#v12_fail2ban_statuses[@]}" >&2
+    fi
+else
+    printf '[v1.2 shadow] ERROR: %s\n' "$ITHACA_SHADOW_ERROR" >&2
+    exit 4
+fi
+
 check_ssh
 check_apache
 check_tls
