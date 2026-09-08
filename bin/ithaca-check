@@ -1,66 +1,18 @@
 #!/usr/bin/env bash
 set -u
 
-if [ "$EUID" -ne 0 ]; then
-  echo "Esegui con sudo: sudo ithaca-check"
-  exit 1
-fi
+BASE="${ITHACA_BASE_DIR:-/opt/ithaca-security}"
+ENGINE="${ITHACA_ENGINE:-legacy}"
 
-BASE="/opt/ithaca-security"
-CONF="$BASE/config/ithaca.conf"
-
-[ -f "$CONF" ] && source "$CONF"
-
-REPORT_DIR="${REPORTS:-$BASE/reports}"
-NOW="$(date '+%Y-%m-%d_%H-%M-%S')"
-REPORT="$REPORT_DIR/check-$NOW.txt"
-LATEST="$REPORT_DIR/check-latest.txt"
-
-mkdir -p "$REPORT_DIR"
-
-exec > >(tee "$REPORT") 2>&1
-
-source "$BASE/lib/common.sh"
-
-source "$BASE/modules/system.sh"
-source "$BASE/modules/firewall.sh"
-source "$BASE/modules/fail2ban.sh"
-source "$BASE/modules/ssh.sh"
-source "$BASE/modules/apache.sh"
-source "$BASE/modules/tls.sh"
-source "$BASE/modules/postgres.sh"
-source "$BASE/modules/geoserver.sh"
-source "$BASE/modules/azurearc.sh"
-source "$BASE/modules/certs.sh"
-
-echo "======================================"
-echo " ITHACA SECURITY CHECK"
-echo " $(date)"
-echo "======================================"
-
-check_system
-check_firewall
-check_fail2ban
-check_ssh
-check_apache
-check_tls
-check_postgres
-check_geoserver
-check_azurearc
-check_certs
-
-clamp_score
-
-echo ""
-echo "======================================"
-echo " RISULTATO"
-echo "======================================"
-echo "Warnings : $WARN"
-echo "Critical : $CRIT"
-echo "Score    : $SCORE/100"
-echo "Report   : $REPORT"
-echo "======================================"
-
-ln -sf "$REPORT" "$LATEST"
-
-[ "$CRIT" -eq 0 ]
+case "$ENGINE" in
+    legacy)
+        exec "$BASE/bin/ithaca-check-legacy" "$@"
+        ;;
+    v12)
+        exec "$BASE/bin/ithaca-check-v12" "$@"
+        ;;
+    *)
+        printf 'ITHACA_ENGINE non valido: %s (valori: legacy, v12)\n' "$ENGINE" >&2
+        exit 3
+        ;;
+esac

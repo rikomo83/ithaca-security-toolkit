@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -u
+
+if [[ "$EUID" -ne 0 ]]; then
+    echo "Esegui con sudo: sudo ithaca-check" >&2
+    exit 1
+fi
+
+ITHACA_BASE_DIR="${ITHACA_BASE_DIR:-/opt/ithaca-security}"
+export ITHACA_BASE_DIR
+
+# shellcheck source=core/bootstrap.sh
+source "$ITHACA_BASE_DIR/core/bootstrap.sh"
+# shellcheck source=core/legacy-adapter.sh
+source "$ITHACA_BASE_DIR/core/legacy-adapter.sh"
+
+tmp_report="$(mktemp)" || exit 4
+trap 'rm -f "$tmp_report"' EXIT INT TERM
+
+"$ITHACA_BASE_DIR/bin/ithaca-check-legacy" "$@" > "$tmp_report" 2>&1
+legacy_rc=$?
+cat "$tmp_report"
+
+ithaca_core_init
+if legacy_parse_report "$tmp_report"; then
+    if [[ "${ITHACA_ADAPTER_DEBUG:-no}" == "yes" ]]; then
+        printf '[v1.2 adapter] parity OK: WARN=%s CRITICAL=%s SCORE=%s/100\n' \
+            "$ITHACA_LEGACY_SUMMARY_WARN" \
+            "$ITHACA_LEGACY_SUMMARY_CRIT" \
+            "$ITHACA_LEGACY_SUMMARY_SCORE" >&2
+    fi
+else
+    printf '[v1.2 adapter] ERROR: %s\n' "$ITHACA_ERROR_MESSAGE" >&2
+    exit 4
+fi
+
+exit "$legacy_rc"
