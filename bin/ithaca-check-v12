@@ -20,7 +20,7 @@ LATEST="$REPORT_DIR/check-latest.txt"
 mkdir -p "$REPORT_DIR"
 exec > >(tee "$REPORT") 2>&1
 
-# Sentinel compatibility layer used by the nine modules not migrated yet.
+# Sentinel compatibility layer used by the eight modules not migrated yet.
 source "$ITHACA_BASE_DIR/lib/common.sh"
 
 # Core API 1.
@@ -31,7 +31,6 @@ source "$ITHACA_BASE_DIR/core/legacy-adapter.sh"
 source "$ITHACA_BASE_DIR/core/shadow.sh"
 
 # Modules still executed through the Sentinel contract.
-source "$ITHACA_BASE_DIR/modules/firewall.sh"
 source "$ITHACA_BASE_DIR/modules/fail2ban.sh"
 source "$ITHACA_BASE_DIR/modules/ssh.sh"
 source "$ITHACA_BASE_DIR/modules/apache.sh"
@@ -60,35 +59,13 @@ if [[ "${ITHACA_ADAPTER_DEBUG:-no}" == "yes" ]]; then
         "${#ITHACA_RESULT_STATUSES[@]}" >&2
 fi
 
-firewall_fragment="$(mktemp)" || exit 4
-trap 'rm -f "$firewall_fragment"' EXIT INT TERM
-
-check_firewall > "$firewall_fragment"
-cat "$firewall_fragment"
-
-_ithaca_results_reset
-if ! legacy_parse_fragment "$firewall_fragment" firewall; then
-    printf '[v1.2 shadow] ERROR: %s\n' "$ITHACA_ERROR_MESSAGE" >&2
-    exit 4
-fi
-legacy_firewall_statuses=("${ITHACA_RESULT_STATUSES[@]}")
-legacy_firewall_messages=("${ITHACA_RESULT_MESSAGES[@]}")
-
-_ithaca_results_reset
+firewall_result_start="${#ITHACA_RESULT_STATUSES[@]}"
+section "FIREWALL"
 _ithaca_run_registered_check_id "firewall.status"
-v12_firewall_statuses=("${ITHACA_RESULT_STATUSES[@]}")
-v12_firewall_messages=("${ITHACA_RESULT_MESSAGES[@]}")
+_ithaca_render_results_legacy "$firewall_result_start"
 
-if _ithaca_shadow_compare \
-    legacy_firewall_statuses legacy_firewall_messages \
-    v12_firewall_statuses v12_firewall_messages; then
-    if [[ "${ITHACA_ADAPTER_DEBUG:-no}" == "yes" ]]; then
-        printf '[v1.2 shadow] firewall parity OK: results=%s\n' \
-            "${#v12_firewall_statuses[@]}" >&2
-    fi
-else
-    printf '[v1.2 shadow] ERROR: %s\n' "$ITHACA_SHADOW_ERROR" >&2
-    exit 4
+if [[ "${ITHACA_ADAPTER_DEBUG:-no}" == "yes" ]]; then
+    printf '[v1.2 cutover] firewall active: results=1\n' >&2
 fi
 
 check_fail2ban
