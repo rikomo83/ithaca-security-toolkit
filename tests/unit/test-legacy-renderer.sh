@@ -36,9 +36,29 @@ failures=0
 [[ "${RENDERED[4]}" == "CRITICAL:Errore check: Esecuzione fallita" ]] || failures=$((failures + 1))
 [[ -z "$output" ]] || failures=$((failures + 1))
 
+RENDERED=()
+_ithaca_results_reset
+result_ok "tls.protocols" "a.example.test TLS 1.2 attivo"
+result_ok "tls.protocols" "a.example.test TLS 1.3 attivo"
+result_ok "tls.protocols" "a.example.test TLS 1.0 bloccato"
+result_ok "tls.protocols" "b.example.test TLS 1.2 attivo"
+result_ok "tls.protocols" "b.example.test TLS 1.3 attivo"
+result_ok "tls.protocols" "b.example.test TLS 1.0 bloccato"
+
+tmp_output="$(mktemp)"
+_ithaca_render_tls_results_legacy 0 > "$tmp_output"
+tls_render_rc=$?
+tls_output="$(<"$tmp_output")"
+rm -f "$tmp_output"
+
+[[ "$tls_render_rc" == 0 ]] || failures=$((failures + 1))
+[[ "${#RENDERED[@]}" == 6 ]] || failures=$((failures + 1))
+[[ "$tls_output" == $'Host: a.example.test\n\nHost: b.example.test' ]] || failures=$((failures + 1))
+
 if (( failures == 0 )); then
     printf 'ok 1 - rende gli stati Core nel formato Sentinel\n'
-    printf '1 test superato\n'
+    printf 'ok 2 - preserva i gruppi Host del report TLS Sentinel\n'
+    printf '2 test superati\n'
     exit 0
 fi
 
