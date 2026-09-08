@@ -22,6 +22,38 @@ _ithaca_legacy_section_slug() {
     esac
 }
 
+legacy_parse_fragment() {
+    local report_file="${1:-}"
+    local section="${2:-general}"
+    local line=""
+    local status=""
+    local message=""
+    local check_id=""
+    local sequence=0
+
+    [[ -f "$report_file" ]] ||
+        _ithaca_set_error legacy_report_missing "Frammento legacy non trovato: $report_file" || return 1
+    [[ "$section" =~ ^[a-z][a-z0-9_-]*$ ]] ||
+        _ithaca_set_error invalid_legacy_section "Sezione legacy non valida: $section" || return 1
+
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        line="${line%$'\r'}"
+        case "$line" in
+            "✓ "*) status="OK";       message="${line#✓ }" ;;
+            "⚠ "*) status="WARN";     message="${line#⚠ }" ;;
+            "✗ "*) status="CRITICAL"; message="${line#✗ }" ;;
+            *) continue ;;
+        esac
+
+        sequence=$((sequence + 1))
+        check_id="$(printf 'legacy.%s.check%03d' "$section" "$sequence")"
+        _ithaca_add_result "$status" "$check_id" "$message" "Imported from Sentinel output" || return 1
+    done < "$report_file"
+
+    (( sequence > 0 )) ||
+        _ithaca_set_error legacy_fragment_empty "Nessun risultato nel frammento legacy: $section" || return 1
+}
+
 legacy_parse_report() {
     local report_file="${1:-}"
     local line=""

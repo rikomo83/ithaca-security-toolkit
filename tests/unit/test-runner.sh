@@ -38,6 +38,10 @@ assert_equal "1" "${#ITHACA_RESULT_STATUSES[@]}" "filtra i check per categoria"
 assert_equal "OK" "${ITHACA_RESULT_STATUSES[0]}" "mantiene il risultato del check"
 
 _ithaca_results_reset
+_ithaca_run_registered_check_id "runner.ok"
+assert_equal "1" "${#ITHACA_RESULT_STATUSES[@]}" "esegue un check per ID"
+
+_ithaca_results_reset
 _ithaca_run_registered_checks other
 assert_equal "2" "${#ITHACA_RESULT_STATUSES[@]}" "esegue tutti i check della categoria"
 assert_equal "ERROR" "${ITHACA_RESULT_STATUSES[0]}" "segnala un check senza risultato"
