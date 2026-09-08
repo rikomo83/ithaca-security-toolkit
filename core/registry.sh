@@ -39,6 +39,12 @@ register_check() {
     [[ "$check_id" =~ ^[a-z][a-z0-9_-]*(\.[a-z][a-z0-9_-]*)+$ ]] ||
         _ithaca_set_error invalid_check_id "ID check non valido: $check_id" || return 1
 
+    if [[ -n "${ITHACA_PLUGIN_LOADING_ID:-}" &&
+          "$check_id" != "$ITHACA_PLUGIN_LOADING_ID".* ]]; then
+        _ithaca_set_error invalid_plugin_namespace \
+            "Il check $check_id non appartiene al plugin $ITHACA_PLUGIN_LOADING_ID" || return 1
+    fi
+
     [[ "$function_name" =~ ^check_[a-z][a-z0-9_]*$ ]] ||
         _ithaca_set_error invalid_function_name "Funzione check non valida: $function_name" || return 1
 
