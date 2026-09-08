@@ -20,7 +20,7 @@ LATEST="$REPORT_DIR/check-latest.txt"
 mkdir -p "$REPORT_DIR"
 exec > >(tee "$REPORT") 2>&1
 
-# Sentinel compatibility layer used by the six modules not migrated yet.
+# Sentinel compatibility layer used by the five modules not migrated yet.
 source "$ITHACA_BASE_DIR/lib/common.sh"
 
 # Core API 1.
@@ -31,7 +31,6 @@ source "$ITHACA_BASE_DIR/core/legacy-adapter.sh"
 source "$ITHACA_BASE_DIR/core/shadow.sh"
 
 # Modules still executed through the Sentinel contract.
-source "$ITHACA_BASE_DIR/modules/apache.sh"
 source "$ITHACA_BASE_DIR/modules/tls.sh"
 source "$ITHACA_BASE_DIR/modules/postgres.sh"
 source "$ITHACA_BASE_DIR/modules/geoserver.sh"
@@ -89,36 +88,14 @@ if [[ "${ITHACA_ADAPTER_DEBUG:-no}" == "yes" ]]; then
     printf '[v1.2 cutover] ssh active: results=2\n' >&2
 fi
 
-apache_fragment="$(mktemp)" || exit 4
-trap 'rm -f "$apache_fragment"' EXIT INT TERM
-
-check_apache > "$apache_fragment"
-cat "$apache_fragment"
-
-_ithaca_results_reset
-if ! legacy_parse_fragment "$apache_fragment" apache; then
-    printf '[v1.2 shadow] ERROR: %s\n' "$ITHACA_ERROR_MESSAGE" >&2
-    exit 4
-fi
-legacy_apache_statuses=("${ITHACA_RESULT_STATUSES[@]}")
-legacy_apache_messages=("${ITHACA_RESULT_MESSAGES[@]}")
-
-_ithaca_results_reset
+apache_result_start="${#ITHACA_RESULT_STATUSES[@]}"
+section "APACHE"
 _ithaca_run_registered_check_id "apache.config"
 _ithaca_run_registered_check_id "apache.service"
-v12_apache_statuses=("${ITHACA_RESULT_STATUSES[@]}")
-v12_apache_messages=("${ITHACA_RESULT_MESSAGES[@]}")
+_ithaca_render_results_legacy "$apache_result_start"
 
-if _ithaca_shadow_compare \
-    legacy_apache_statuses legacy_apache_messages \
-    v12_apache_statuses v12_apache_messages; then
-    if [[ "${ITHACA_ADAPTER_DEBUG:-no}" == "yes" ]]; then
-        printf '[v1.2 shadow] apache parity OK: results=%s\n' \
-            "${#v12_apache_statuses[@]}" >&2
-    fi
-else
-    printf '[v1.2 shadow] ERROR: %s\n' "$ITHACA_SHADOW_ERROR" >&2
-    exit 4
+if [[ "${ITHACA_ADAPTER_DEBUG:-no}" == "yes" ]]; then
+    printf '[v1.2 cutover] apache active: results=2\n' >&2
 fi
 
 check_tls
