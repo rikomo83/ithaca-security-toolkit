@@ -27,6 +27,7 @@ source "$ITHACA_BASE_DIR/lib/common.sh"
 source "$ITHACA_BASE_DIR/core/bootstrap.sh"
 source "$ITHACA_BASE_DIR/core/runner.sh"
 source "$ITHACA_BASE_DIR/core/legacy-renderer.sh"
+source "$ITHACA_BASE_DIR/core/discovery.sh"
 
 echo "======================================"
 echo " ITHACA SECURITY CHECK"
@@ -44,6 +45,10 @@ source "$ITHACA_BASE_DIR/modules-v12/postgres.sh"
 source "$ITHACA_BASE_DIR/modules-v12/geoserver.sh"
 source "$ITHACA_BASE_DIR/modules-v12/azurearc.sh"
 source "$ITHACA_BASE_DIR/modules-v12/certs.sh"
+
+official_check_count="${#ITHACA_CHECK_IDS[@]}"
+discover_plugins
+plugin_discovery_error_count="${#ITHACA_DISCOVERY_ERRORS[@]}"
 _ithaca_registry_lock
 
 section "SYSTEM"
@@ -143,6 +148,25 @@ if [[ "${ITHACA_ADAPTER_DEBUG:-no}" == "yes" ]]; then
     printf '[v1.2 cutover] certs active: results=1\n' >&2
 fi
 
+if (( ${#ITHACA_PLUGIN_IDS[@]} > 0 )); then
+    section "PLUGINS"
+    for ((plugin_check_index = official_check_count;
+         plugin_check_index < ${#ITHACA_CHECK_IDS[@]};
+         plugin_check_index += 1)); do
+        plugin_result_start="${#ITHACA_RESULT_STATUSES[@]}"
+        _ithaca_run_registered_check_id "${ITHACA_CHECK_IDS[$plugin_check_index]}"
+        _ithaca_render_results_legacy "$plugin_result_start"
+    done
+fi
+
+if [[ "${ITHACA_ADAPTER_DEBUG:-no}" == "yes" ]]; then
+    printf '[v1.2 plugins] loaded=%s errors=%s\n' \
+        "${#ITHACA_PLUGIN_IDS[@]}" "$plugin_discovery_error_count" >&2
+    for plugin_discovery_error in "${ITHACA_DISCOVERY_ERRORS[@]}"; do
+        printf '[v1.2 plugins] ERROR: %s\n' "$plugin_discovery_error" >&2
+    done
+fi
+
 clamp_score
 
 echo ""
@@ -157,4 +181,5 @@ echo "======================================"
 
 ln -sf "$REPORT" "$LATEST"
 
+(( plugin_discovery_error_count == 0 )) || exit 4
 [[ "$CRIT" -eq 0 ]]
