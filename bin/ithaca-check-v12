@@ -20,7 +20,7 @@ LATEST="$REPORT_DIR/check-latest.txt"
 mkdir -p "$REPORT_DIR"
 exec > >(tee "$REPORT") 2>&1
 
-# Sentinel compatibility layer used by the two modules not migrated yet.
+# Sentinel compatibility layer used by the final module not migrated yet.
 source "$ITHACA_BASE_DIR/lib/common.sh"
 
 # Core API 1.
@@ -31,7 +31,6 @@ source "$ITHACA_BASE_DIR/core/legacy-adapter.sh"
 source "$ITHACA_BASE_DIR/core/shadow.sh"
 
 # Modules still executed through the Sentinel contract.
-source "$ITHACA_BASE_DIR/modules/azurearc.sh"
 source "$ITHACA_BASE_DIR/modules/certs.sh"
 
 echo "======================================"
@@ -129,42 +128,16 @@ if [[ "${ITHACA_ADAPTER_DEBUG:-no}" == "yes" ]]; then
     printf '[v1.2 cutover] geoserver active: results=2\n' >&2
 fi
 
-azurearc_legacy_output="$(mktemp)"
-check_azurearc >"$azurearc_legacy_output" 2>&1
-cat "$azurearc_legacy_output"
-
 azurearc_result_start="${#ITHACA_RESULT_STATUSES[@]}"
-legacy_parse_fragment "$azurearc_legacy_output" azurearc
-azurearc_legacy_statuses=("${ITHACA_RESULT_STATUSES[@]:azurearc_result_start}")
-azurearc_legacy_messages=("${ITHACA_RESULT_MESSAGES[@]:azurearc_result_start}")
-ITHACA_RESULT_CHECK_IDS=("${ITHACA_RESULT_CHECK_IDS[@]:0:azurearc_result_start}")
-ITHACA_RESULT_STATUSES=("${ITHACA_RESULT_STATUSES[@]:0:azurearc_result_start}")
-ITHACA_RESULT_MESSAGES=("${ITHACA_RESULT_MESSAGES[@]:0:azurearc_result_start}")
-ITHACA_RESULT_DETAILS=("${ITHACA_RESULT_DETAILS[@]:0:azurearc_result_start}")
-ITHACA_RESULT_TIMESTAMPS=("${ITHACA_RESULT_TIMESTAMPS[@]:0:azurearc_result_start}")
-
+section "AZURE ARC"
 _ithaca_run_registered_check_id "azurearc.status"
-azurearc_v12_statuses=("${ITHACA_RESULT_STATUSES[@]:azurearc_result_start}")
-azurearc_v12_messages=("${ITHACA_RESULT_MESSAGES[@]:azurearc_result_start}")
-ITHACA_RESULT_CHECK_IDS=("${ITHACA_RESULT_CHECK_IDS[@]:0:azurearc_result_start}")
-ITHACA_RESULT_STATUSES=("${ITHACA_RESULT_STATUSES[@]:0:azurearc_result_start}")
-ITHACA_RESULT_MESSAGES=("${ITHACA_RESULT_MESSAGES[@]:0:azurearc_result_start}")
-ITHACA_RESULT_DETAILS=("${ITHACA_RESULT_DETAILS[@]:0:azurearc_result_start}")
-ITHACA_RESULT_TIMESTAMPS=("${ITHACA_RESULT_TIMESTAMPS[@]:0:azurearc_result_start}")
+_ithaca_render_results_legacy "$azurearc_result_start"
 
 if [[ "${ITHACA_ADAPTER_DEBUG:-no}" == "yes" ]]; then
-    if _ithaca_shadow_compare \
-        azurearc_legacy_statuses azurearc_legacy_messages \
-        azurearc_v12_statuses azurearc_v12_messages; then
-        printf '[v1.2 shadow] azurearc parity OK: results=%s\n' \
-            "${#azurearc_v12_statuses[@]}" >&2
-    else
-        printf '[v1.2 shadow] azurearc parity ERROR: %s\n' \
-            "$ITHACA_SHADOW_ERROR" >&2
-    fi
+    printf '[v1.2 cutover] azurearc active: results=%s\n' \
+        "$(( ${#ITHACA_RESULT_STATUSES[@]} - azurearc_result_start ))" >&2
 fi
 
-rm -f "$azurearc_legacy_output"
 check_certs
 
 clamp_score
