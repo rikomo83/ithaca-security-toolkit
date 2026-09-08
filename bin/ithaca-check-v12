@@ -20,7 +20,7 @@ LATEST="$REPORT_DIR/check-latest.txt"
 mkdir -p "$REPORT_DIR"
 exec > >(tee "$REPORT") 2>&1
 
-# Sentinel compatibility layer used by the seven modules not migrated yet.
+# Sentinel compatibility layer used by the six modules not migrated yet.
 source "$ITHACA_BASE_DIR/lib/common.sh"
 
 # Core API 1.
@@ -31,7 +31,6 @@ source "$ITHACA_BASE_DIR/core/legacy-adapter.sh"
 source "$ITHACA_BASE_DIR/core/shadow.sh"
 
 # Modules still executed through the Sentinel contract.
-source "$ITHACA_BASE_DIR/modules/ssh.sh"
 source "$ITHACA_BASE_DIR/modules/apache.sh"
 source "$ITHACA_BASE_DIR/modules/tls.sh"
 source "$ITHACA_BASE_DIR/modules/postgres.sh"
@@ -78,37 +77,15 @@ if [[ "${ITHACA_ADAPTER_DEBUG:-no}" == "yes" ]]; then
     printf '[v1.2 cutover] fail2ban active: results=1\n' >&2
 fi
 
-ssh_fragment="$(mktemp)" || exit 4
-trap 'rm -f "$ssh_fragment"' EXIT INT TERM
-
-check_ssh > "$ssh_fragment"
-cat "$ssh_fragment"
-
-_ithaca_results_reset
-if ! legacy_parse_fragment "$ssh_fragment" ssh; then
-    printf '[v1.2 shadow] ERROR: %s\n' "$ITHACA_ERROR_MESSAGE" >&2
-    exit 4
-fi
-legacy_ssh_statuses=("${ITHACA_RESULT_STATUSES[@]}")
-legacy_ssh_messages=("${ITHACA_RESULT_MESSAGES[@]}")
-
-_ithaca_results_reset
+ssh_result_start="${#ITHACA_RESULT_STATUSES[@]}"
+section "SSH"
 unset ITHACA_SSHD_EFFECTIVE_CONFIG
 _ithaca_run_registered_check_id "ssh.password_authentication"
 _ithaca_run_registered_check_id "ssh.root_login"
-v12_ssh_statuses=("${ITHACA_RESULT_STATUSES[@]}")
-v12_ssh_messages=("${ITHACA_RESULT_MESSAGES[@]}")
+_ithaca_render_results_legacy "$ssh_result_start"
 
-if _ithaca_shadow_compare \
-    legacy_ssh_statuses legacy_ssh_messages \
-    v12_ssh_statuses v12_ssh_messages; then
-    if [[ "${ITHACA_ADAPTER_DEBUG:-no}" == "yes" ]]; then
-        printf '[v1.2 shadow] ssh parity OK: results=%s\n' \
-            "${#v12_ssh_statuses[@]}" >&2
-    fi
-else
-    printf '[v1.2 shadow] ERROR: %s\n' "$ITHACA_SHADOW_ERROR" >&2
-    exit 4
+if [[ "${ITHACA_ADAPTER_DEBUG:-no}" == "yes" ]]; then
+    printf '[v1.2 cutover] ssh active: results=2\n' >&2
 fi
 
 check_apache
