@@ -48,6 +48,7 @@ ithaca_core_init
 source "$ITHACA_BASE_DIR/modules-v12/system.sh"
 source "$ITHACA_BASE_DIR/modules-v12/firewall.sh"
 source "$ITHACA_BASE_DIR/modules-v12/fail2ban.sh"
+source "$ITHACA_BASE_DIR/modules-v12/ssh.sh"
 _ithaca_registry_lock
 
 section "SYSTEM"
@@ -77,7 +78,39 @@ if [[ "${ITHACA_ADAPTER_DEBUG:-no}" == "yes" ]]; then
     printf '[v1.2 cutover] fail2ban active: results=1\n' >&2
 fi
 
-check_ssh
+ssh_fragment="$(mktemp)" || exit 4
+trap 'rm -f "$ssh_fragment"' EXIT INT TERM
+
+check_ssh > "$ssh_fragment"
+cat "$ssh_fragment"
+
+_ithaca_results_reset
+if ! legacy_parse_fragment "$ssh_fragment" ssh; then
+    printf '[v1.2 shadow] ERROR: %s\n' "$ITHACA_ERROR_MESSAGE" >&2
+    exit 4
+fi
+legacy_ssh_statuses=("${ITHACA_RESULT_STATUSES[@]}")
+legacy_ssh_messages=("${ITHACA_RESULT_MESSAGES[@]}")
+
+_ithaca_results_reset
+unset ITHACA_SSHD_EFFECTIVE_CONFIG
+_ithaca_run_registered_check_id "ssh.password_authentication"
+_ithaca_run_registered_check_id "ssh.root_login"
+v12_ssh_statuses=("${ITHACA_RESULT_STATUSES[@]}")
+v12_ssh_messages=("${ITHACA_RESULT_MESSAGES[@]}")
+
+if _ithaca_shadow_compare \
+    legacy_ssh_statuses legacy_ssh_messages \
+    v12_ssh_statuses v12_ssh_messages; then
+    if [[ "${ITHACA_ADAPTER_DEBUG:-no}" == "yes" ]]; then
+        printf '[v1.2 shadow] ssh parity OK: results=%s\n' \
+            "${#v12_ssh_statuses[@]}" >&2
+    fi
+else
+    printf '[v1.2 shadow] ERROR: %s\n' "$ITHACA_SHADOW_ERROR" >&2
+    exit 4
+fi
+
 check_apache
 check_tls
 check_postgres
