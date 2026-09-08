@@ -8,64 +8,77 @@ fi
 
 ITHACA_BASE_DIR="${ITHACA_BASE_DIR:-/opt/ithaca-security}"
 export ITHACA_BASE_DIR
+CONF="$ITHACA_BASE_DIR/config/ithaca.conf"
 
-# shellcheck source=core/bootstrap.sh
+[[ -f "$CONF" ]] && source "$CONF"
+
+REPORT_DIR="${REPORTS:-$ITHACA_BASE_DIR/reports}"
+NOW="$(date '+%Y-%m-%d_%H-%M-%S')"
+REPORT="$REPORT_DIR/check-$NOW.txt"
+LATEST="$REPORT_DIR/check-latest.txt"
+
+mkdir -p "$REPORT_DIR"
+exec > >(tee "$REPORT") 2>&1
+
+# Sentinel compatibility layer used by the nine modules not migrated yet.
+source "$ITHACA_BASE_DIR/lib/common.sh"
+
+# Core API 1.
 source "$ITHACA_BASE_DIR/core/bootstrap.sh"
-# shellcheck source=core/legacy-adapter.sh
-source "$ITHACA_BASE_DIR/core/legacy-adapter.sh"
-# shellcheck source=core/runner.sh
 source "$ITHACA_BASE_DIR/core/runner.sh"
-# shellcheck source=core/shadow.sh
-source "$ITHACA_BASE_DIR/core/shadow.sh"
+source "$ITHACA_BASE_DIR/core/legacy-renderer.sh"
 
-tmp_report="$(mktemp)" || exit 4
-trap 'rm -f "$tmp_report"' EXIT INT TERM
+# Modules still executed through the Sentinel contract.
+source "$ITHACA_BASE_DIR/modules/firewall.sh"
+source "$ITHACA_BASE_DIR/modules/fail2ban.sh"
+source "$ITHACA_BASE_DIR/modules/ssh.sh"
+source "$ITHACA_BASE_DIR/modules/apache.sh"
+source "$ITHACA_BASE_DIR/modules/tls.sh"
+source "$ITHACA_BASE_DIR/modules/postgres.sh"
+source "$ITHACA_BASE_DIR/modules/geoserver.sh"
+source "$ITHACA_BASE_DIR/modules/azurearc.sh"
+source "$ITHACA_BASE_DIR/modules/certs.sh"
 
-"$ITHACA_BASE_DIR/bin/ithaca-check-legacy" "$@" > "$tmp_report" 2>&1
-legacy_rc=$?
-cat "$tmp_report"
+echo "======================================"
+echo " ITHACA SECURITY CHECK"
+echo " $(date)"
+echo "======================================"
 
 ithaca_core_init
-if legacy_parse_report "$tmp_report"; then
-    if [[ "${ITHACA_ADAPTER_DEBUG:-no}" == "yes" ]]; then
-        printf '[v1.2 adapter] parity OK: WARN=%s CRITICAL=%s SCORE=%s/100\n' \
-            "$ITHACA_LEGACY_SUMMARY_WARN" \
-            "$ITHACA_LEGACY_SUMMARY_CRIT" \
-            "$ITHACA_LEGACY_SUMMARY_SCORE" >&2
-    fi
-else
-    printf '[v1.2 adapter] ERROR: %s\n' "$ITHACA_ERROR_MESSAGE" >&2
-    exit 4
-fi
-
-legacy_system_statuses=()
-legacy_system_messages=()
-for ((index = 0; index < ${#ITHACA_RESULT_CHECK_IDS[@]}; index += 1)); do
-    if [[ "${ITHACA_RESULT_CHECK_IDS[$index]}" == legacy.system.* ]]; then
-        legacy_system_statuses+=("${ITHACA_RESULT_STATUSES[$index]}")
-        legacy_system_messages+=("${ITHACA_RESULT_MESSAGES[$index]}")
-    fi
-done
-
-_ithaca_results_reset
-# shellcheck source=modules-v12/system.sh
 source "$ITHACA_BASE_DIR/modules-v12/system.sh"
 _ithaca_registry_lock
+
+section "SYSTEM"
 _ithaca_run_registered_checks system
+_ithaca_render_results_legacy 0
 
-v12_system_statuses=("${ITHACA_RESULT_STATUSES[@]}")
-v12_system_messages=("${ITHACA_RESULT_MESSAGES[@]}")
-
-if _ithaca_shadow_compare \
-    legacy_system_statuses legacy_system_messages \
-    v12_system_statuses v12_system_messages; then
-    if [[ "${ITHACA_ADAPTER_DEBUG:-no}" == "yes" ]]; then
-        printf '[v1.2 shadow] system parity OK: results=%s\n' \
-            "${#v12_system_statuses[@]}" >&2
-    fi
-else
-    printf '[v1.2 shadow] ERROR: %s\n' "$ITHACA_SHADOW_ERROR" >&2
-    exit 4
+if [[ "${ITHACA_ADAPTER_DEBUG:-no}" == "yes" ]]; then
+    printf '[v1.2 cutover] system active: results=%s\n' \
+        "${#ITHACA_RESULT_STATUSES[@]}" >&2
 fi
 
-exit "$legacy_rc"
+check_firewall
+check_fail2ban
+check_ssh
+check_apache
+check_tls
+check_postgres
+check_geoserver
+check_azurearc
+check_certs
+
+clamp_score
+
+echo ""
+echo "======================================"
+echo " RISULTATO"
+echo "======================================"
+echo "Warnings : $WARN"
+echo "Critical : $CRIT"
+echo "Score    : $SCORE/100"
+echo "Report   : $REPORT"
+echo "======================================"
+
+ln -sf "$REPORT" "$LATEST"
+
+[[ "$CRIT" -eq 0 ]]
