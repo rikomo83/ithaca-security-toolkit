@@ -20,18 +20,13 @@ LATEST="$REPORT_DIR/check-latest.txt"
 mkdir -p "$REPORT_DIR"
 exec > >(tee "$REPORT") 2>&1
 
-# Sentinel compatibility layer used by the final module not migrated yet.
+# Sentinel-compatible output retained while v1.1 remains the default engine.
 source "$ITHACA_BASE_DIR/lib/common.sh"
 
 # Core API 1.
 source "$ITHACA_BASE_DIR/core/bootstrap.sh"
 source "$ITHACA_BASE_DIR/core/runner.sh"
 source "$ITHACA_BASE_DIR/core/legacy-renderer.sh"
-source "$ITHACA_BASE_DIR/core/legacy-adapter.sh"
-source "$ITHACA_BASE_DIR/core/shadow.sh"
-
-# Modules still executed through the Sentinel contract.
-source "$ITHACA_BASE_DIR/modules/certs.sh"
 
 echo "======================================"
 echo " ITHACA SECURITY CHECK"
@@ -139,42 +134,14 @@ if [[ "${ITHACA_ADAPTER_DEBUG:-no}" == "yes" ]]; then
         "$(( ${#ITHACA_RESULT_STATUSES[@]} - azurearc_result_start ))" >&2
 fi
 
-certs_legacy_output="$(mktemp)"
-check_certs >"$certs_legacy_output" 2>&1
-cat "$certs_legacy_output"
-
 certs_result_start="${#ITHACA_RESULT_STATUSES[@]}"
-legacy_parse_fragment "$certs_legacy_output" certs
-certs_legacy_statuses=("${ITHACA_RESULT_STATUSES[@]:certs_result_start}")
-certs_legacy_messages=("${ITHACA_RESULT_MESSAGES[@]:certs_result_start}")
-ITHACA_RESULT_CHECK_IDS=("${ITHACA_RESULT_CHECK_IDS[@]:0:certs_result_start}")
-ITHACA_RESULT_STATUSES=("${ITHACA_RESULT_STATUSES[@]:0:certs_result_start}")
-ITHACA_RESULT_MESSAGES=("${ITHACA_RESULT_MESSAGES[@]:0:certs_result_start}")
-ITHACA_RESULT_DETAILS=("${ITHACA_RESULT_DETAILS[@]:0:certs_result_start}")
-ITHACA_RESULT_TIMESTAMPS=("${ITHACA_RESULT_TIMESTAMPS[@]:0:certs_result_start}")
-
+section "CERTIFICATI"
 _ithaca_run_registered_check_id "certs.expiry"
-certs_v12_statuses=("${ITHACA_RESULT_STATUSES[@]:certs_result_start}")
-certs_v12_messages=("${ITHACA_RESULT_MESSAGES[@]:certs_result_start}")
-ITHACA_RESULT_CHECK_IDS=("${ITHACA_RESULT_CHECK_IDS[@]:0:certs_result_start}")
-ITHACA_RESULT_STATUSES=("${ITHACA_RESULT_STATUSES[@]:0:certs_result_start}")
-ITHACA_RESULT_MESSAGES=("${ITHACA_RESULT_MESSAGES[@]:0:certs_result_start}")
-ITHACA_RESULT_DETAILS=("${ITHACA_RESULT_DETAILS[@]:0:certs_result_start}")
-ITHACA_RESULT_TIMESTAMPS=("${ITHACA_RESULT_TIMESTAMPS[@]:0:certs_result_start}")
+_ithaca_render_results_legacy "$certs_result_start"
 
 if [[ "${ITHACA_ADAPTER_DEBUG:-no}" == "yes" ]]; then
-    if _ithaca_shadow_compare \
-        certs_legacy_statuses certs_legacy_messages \
-        certs_v12_statuses certs_v12_messages; then
-        printf '[v1.2 shadow] certs parity OK: results=%s\n' \
-            "${#certs_v12_statuses[@]}" >&2
-    else
-        printf '[v1.2 shadow] certs parity ERROR: %s\n' \
-            "$ITHACA_SHADOW_ERROR" >&2
-    fi
+    printf '[v1.2 cutover] certs active: results=1\n' >&2
 fi
-
-rm -f "$certs_legacy_output"
 
 clamp_score
 
