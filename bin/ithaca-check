@@ -2,7 +2,7 @@
 set -u
 
 BASE="${ITHACA_BASE_DIR:-/opt/ithaca-security}"
-ENGINE="${ITHACA_ENGINE:-legacy}"
+ENGINE="${ITHACA_ENGINE:-v12}"
 
 case "$ENGINE" in
     legacy)
