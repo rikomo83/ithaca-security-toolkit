@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.2.0 "Odyssey" - 2026-09-14
+
+### Released
+
+- Prima release stabile del motore Core API 1, qualificata attraverso due
+  release candidate e audit ripetuti con parità rispetto a Sentinel.
+- Moduli ufficiali isolati con timeout, plugin sicuri e report testuale e JSON
+  generati dalla stessa raccolta di risultati canonici.
+- Rollback operativo al motore v1.1 Sentinel mantenuto tramite
+  `ITHACA_ENGINE=legacy`.
+
 ## v1.2.0-rc.2 "Odyssey" - 2026-09-14
 
 ### Added

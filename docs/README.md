@@ -1,6 +1,6 @@
 # Ithaca Security Toolkit
 
-Version: **1.2.0-rc.2 “Odyssey”**
+Version: **1.2.0 “Odyssey”**
 
 Toolkit interno per l'inventory, l'hardening e il Security Assessment dei server Ubuntu di ITHACA.
 
