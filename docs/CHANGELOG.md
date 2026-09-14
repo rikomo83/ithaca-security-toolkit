@@ -1,5 +1,34 @@
 # Changelog
 
+## v1.2.0-rc.1 "Odyssey" - 2026-09-14
+
+### Added
+
+- Core API 1 con registro dei check, risultati canonici e runner.
+- Moduli v1.2 per system, firewall, fail2ban, SSH, Apache, TLS, PostgreSQL,
+  GeoServer, Azure Arc e certificati.
+- Discovery sicura dei plugin con validazione di metadati, namespace,
+  proprietà e permessi.
+- Report JSON atomico con `schema_version: 1`, metadati e durata dei check.
+- Suite di test Core, moduli, compatibilità, plugin e reporter.
+
+### Changed
+
+- Il motore v1.2 è ora il percorso predefinito di `ithaca-check`.
+- Il report testuale e la formula dello score restano compatibili con Sentinel.
+
+### Compatibility
+
+- Il motore v1.1 Sentinel rimane disponibile con
+  `sudo env ITHACA_ENGINE=legacy ithaca-check`.
+- Il tag `v1.1.0` resta la baseline per il rollback completo.
+
+## v1.1.0 "Sentinel" - 2026-09-03
+
+### Added
+
+- Baseline Git verificata e report golden del toolkit Sentinel.
+
 ## v1.0.0 - 2026-07-09
 
 ### Added
