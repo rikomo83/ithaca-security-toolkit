@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.2.0-rc.2 "Odyssey" - 2026-09-14
+
+### Added
+
+- Isolamento di ogni check Core API 1 in un processo dedicato.
+- Timeout effettivo basato sul valore registrato dal modulo.
+- Cattura sicura di stdout e stderr inattesi nei dettagli del risultato.
+- Test di regressione per timeout, crash e prosecuzione dei check successivi.
+
+### Changed
+
+- Timeout, crash, risultati non validi e check senza risultato vengono
+  convertiti in stato `ERROR` senza interrompere l'audit.
+- La terminazione copre l'intero albero dei processi avviati dal check.
+
 ## v1.2.0-rc.1 "Odyssey" - 2026-09-14
 
 ### Added
