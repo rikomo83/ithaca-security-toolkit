@@ -26,11 +26,19 @@ assert_equal() {
 check_runner_ok() { result_ok "runner.ok" "OK"; }
 check_runner_empty() { return 0; }
 check_runner_failure() { return 7; }
+check_runner_timeout() { sleep 2; result_ok "runner.timeout" "Troppo tardi"; }
+check_runner_crash() { kill -TERM "$BASHPID"; }
+check_runner_output() { printf 'output non previsto'; result_ok "runner.output" "OK"; }
+check_runner_after() { result_ok "runner.after" "Eseguito dopo gli errori"; }
 
 ithaca_core_init
 register_check "runner.ok" "check_runner_ok" "system" "Successful check"
 register_check "runner.empty" "check_runner_empty" "other" "Empty check"
 register_check "runner.failure" "check_runner_failure" "other" "Failed check"
+register_check "runner.timeout" "check_runner_timeout" "isolation" "Blocking check" yes 1
+register_check "runner.crash" "check_runner_crash" "isolation" "Crashing check"
+register_check "runner.output" "check_runner_output" "isolation" "Noisy check"
+register_check "runner.after" "check_runner_after" "isolation" "Following check"
 _ithaca_registry_lock
 
 _ithaca_run_registered_checks system
@@ -49,6 +57,22 @@ _ithaca_run_registered_checks other
 assert_equal "2" "${#ITHACA_RESULT_STATUSES[@]}" "esegue tutti i check della categoria"
 assert_equal "ERROR" "${ITHACA_RESULT_STATUSES[0]}" "segnala un check senza risultato"
 assert_equal "ERROR" "${ITHACA_RESULT_STATUSES[1]}" "segnala un ritorno non-zero"
+
+_ithaca_results_reset
+isolation_start_ns="$(date '+%s%N')"
+_ithaca_run_registered_checks isolation
+isolation_elapsed_ms=$((($(date '+%s%N') - isolation_start_ns) / 1000000))
+assert_equal "5" "${#ITHACA_RESULT_STATUSES[@]}" "isola timeout, crash e output inatteso"
+assert_equal "ERROR" "${ITHACA_RESULT_STATUSES[0]}" "trasforma il timeout in errore"
+assert_equal "Timeout dopo 1s" "${ITHACA_RESULT_MESSAGES[0]}" "applica il timeout registrato"
+assert_equal "ERROR" "${ITHACA_RESULT_STATUSES[1]}" "trasforma il crash in errore"
+assert_equal "OK" "${ITHACA_RESULT_STATUSES[2]}" "preserva il risultato del check rumoroso"
+assert_equal "ERROR" "${ITHACA_RESULT_STATUSES[3]}" "cattura l'output inatteso"
+assert_equal "stdout: output non previsto" "${ITHACA_RESULT_DETAILS[3]}" "conserva l'output catturato"
+assert_equal "OK" "${ITHACA_RESULT_STATUSES[4]}" "prosegue con il check successivo"
+elapsed_valid=no
+(( isolation_elapsed_ms < 2000 )) && elapsed_valid=yes
+assert_equal "yes" "$elapsed_valid" "interrompe il check bloccato entro il limite"
 
 (( FAILURES == 0 )) || exit 1
 printf '%s test superati\n' "$TESTS"
