@@ -40,6 +40,9 @@ assert_equal "OK" "${ITHACA_RESULT_STATUSES[0]}" "mantiene il risultato del chec
 _ithaca_results_reset
 _ithaca_run_registered_check_id "runner.ok"
 assert_equal "1" "${#ITHACA_RESULT_STATUSES[@]}" "esegue un check per ID"
+duration_valid=no
+[[ "${ITHACA_RESULT_DURATIONS_MS[0]}" =~ ^[0-9]+$ ]] && duration_valid=yes
+assert_equal "yes" "$duration_valid" "assegna la durata del check in millisecondi"
 
 _ithaca_results_reset
 _ithaca_run_registered_checks other

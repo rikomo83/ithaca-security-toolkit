@@ -7,12 +7,17 @@ _ithaca_run_registered_check_id() {
     local before_count=0
     local after_count=0
     local function_rc=0
+    local start_ns=0
+    local end_ns=0
+    local duration_ms=0
+    local result_index=0
 
     [[ -v "ITHACA_CHECK_FUNCTIONS[$check_id]" ]] ||
         _ithaca_set_error unknown_check_id "Check non registrato: $check_id" || return 1
 
     function_name="${ITHACA_CHECK_FUNCTIONS[$check_id]}"
     before_count="${#ITHACA_RESULT_STATUSES[@]}"
+    start_ns="$(date '+%s%N' 2>/dev/null || printf '0')"
     "$function_name"
     function_rc=$?
     after_count="${#ITHACA_RESULT_STATUSES[@]}"
@@ -22,6 +27,17 @@ _ithaca_run_registered_check_id() {
     elif (( after_count == before_count )); then
         result_error "$check_id" "Check terminato senza produrre un risultato"
     fi
+
+    end_ns="$(date '+%s%N' 2>/dev/null || printf '0')"
+    if [[ "$start_ns" =~ ^[0-9]+$ && "$end_ns" =~ ^[0-9]+$ &&
+          "$end_ns" -ge "$start_ns" ]]; then
+        duration_ms=$(( (end_ns - start_ns) / 1000000 ))
+    fi
+    for ((result_index = before_count;
+         result_index < ${#ITHACA_RESULT_STATUSES[@]};
+         result_index += 1)); do
+        ITHACA_RESULT_DURATIONS_MS[$result_index]="$duration_ms"
+    done
 }
 
 _ithaca_run_registered_checks() {

@@ -5,6 +5,7 @@ declare -ag ITHACA_RESULT_STATUSES=()
 declare -ag ITHACA_RESULT_MESSAGES=()
 declare -ag ITHACA_RESULT_DETAILS=()
 declare -ag ITHACA_RESULT_TIMESTAMPS=()
+declare -ag ITHACA_RESULT_DURATIONS_MS=()
 
 _ithaca_results_reset() {
     ITHACA_RESULT_CHECK_IDS=()
@@ -12,6 +13,7 @@ _ithaca_results_reset() {
     ITHACA_RESULT_MESSAGES=()
     ITHACA_RESULT_DETAILS=()
     ITHACA_RESULT_TIMESTAMPS=()
+    ITHACA_RESULT_DURATIONS_MS=()
 }
 
 _ithaca_result_timestamp() {
@@ -38,6 +40,7 @@ _ithaca_add_result() {
     ITHACA_RESULT_MESSAGES+=("$message")
     ITHACA_RESULT_DETAILS+=("$details")
     ITHACA_RESULT_TIMESTAMPS+=("$(_ithaca_result_timestamp)")
+    ITHACA_RESULT_DURATIONS_MS+=("0")
 }
 
 result_ok()       { _ithaca_add_result OK       "${1:-}" "${2:-}" "${3:-}"; }

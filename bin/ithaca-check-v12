@@ -16,6 +16,10 @@ REPORT_DIR="${REPORTS:-$ITHACA_BASE_DIR/reports}"
 NOW="$(date '+%Y-%m-%d_%H-%M-%S')"
 REPORT="$REPORT_DIR/check-$NOW.txt"
 LATEST="$REPORT_DIR/check-latest.txt"
+JSON_REPORT="$REPORT_DIR/check-$NOW.json"
+LATEST_JSON="$REPORT_DIR/check-latest.json"
+ITHACA_RUN_ID="$NOW-$$"
+export ITHACA_RUN_ID
 
 mkdir -p "$REPORT_DIR"
 exec > >(tee "$REPORT") 2>&1
@@ -28,6 +32,7 @@ source "$ITHACA_BASE_DIR/core/bootstrap.sh"
 source "$ITHACA_BASE_DIR/core/runner.sh"
 source "$ITHACA_BASE_DIR/core/legacy-renderer.sh"
 source "$ITHACA_BASE_DIR/core/discovery.sh"
+source "$ITHACA_BASE_DIR/core/json-reporter.sh"
 
 echo "======================================"
 echo " ITHACA SECURITY CHECK"
@@ -169,6 +174,13 @@ fi
 
 clamp_score
 
+json_report_rc=0
+if write_json_report "$JSON_REPORT"; then
+    ln -sf "$JSON_REPORT" "$LATEST_JSON" || json_report_rc=4
+else
+    json_report_rc=4
+fi
+
 echo ""
 echo "======================================"
 echo " RISULTATO"
@@ -182,4 +194,5 @@ echo "======================================"
 ln -sf "$REPORT" "$LATEST"
 
 (( plugin_discovery_error_count == 0 )) || exit 4
+(( json_report_rc == 0 )) || exit 4
 [[ "$CRIT" -eq 0 ]]

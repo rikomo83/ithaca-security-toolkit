@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 declare -ag ITHACA_PLUGIN_IDS=()
+declare -Ag ITHACA_PLUGIN_VERSIONS=()
 declare -ag ITHACA_DISCOVERY_ERRORS=()
 
 _ithaca_discovery_error() {
@@ -177,6 +178,7 @@ _ithaca_load_plugin() {
     done
     unset ITHACA_PLUGIN_LOADING_ID
     ITHACA_PLUGIN_IDS+=("$plugin_id")
+    ITHACA_PLUGIN_VERSIONS["$plugin_id"]="$ITHACA_PLUGIN_CONF_VERSION"
 }
 
 discover_plugins() {
@@ -184,6 +186,7 @@ discover_plugins() {
     local plugin_dir=""
 
     ITHACA_PLUGIN_IDS=()
+    ITHACA_PLUGIN_VERSIONS=()
     ITHACA_DISCOVERY_ERRORS=()
     [[ -e "$plugin_root" ]] || return 0
     _ithaca_plugin_path_is_secure "$plugin_root" dir "$plugin_root" ||
