@@ -4,6 +4,8 @@ set -u
 TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 ITHACA_BASE_DIR="$(cd "$TEST_DIR/../.." && pwd -P)"
 export ITHACA_BASE_DIR
+OPENSSL_LOG="$(mktemp)"
+trap 'rm -f "$OPENSSL_LOG"' EXIT
 
 source "$ITHACA_BASE_DIR/core/bootstrap.sh"
 source "$ITHACA_BASE_DIR/core/runner.sh"
@@ -14,6 +16,8 @@ apache2ctl() {
 
 openssl() {
     local argument=""
+
+    printf '%s\n' "$*" >> "$OPENSSL_LOG"
 
     for argument in "$@"; do
         case "$argument" in
@@ -39,7 +43,8 @@ if [[ "${#ITHACA_CHECK_IDS[@]}" == 1 &&
       "${ITHACA_RESULT_STATUSES[1]}" == OK &&
       "${ITHACA_RESULT_MESSAGES[1]}" == "example.ithaca.test TLS 1.3 attivo" &&
       "${ITHACA_RESULT_STATUSES[2]}" == OK &&
-      "${ITHACA_RESULT_MESSAGES[2]}" == "example.ithaca.test TLS 1.0 bloccato" ]]; then
+      "${ITHACA_RESULT_MESSAGES[2]}" == "example.ithaca.test TLS 1.0 bloccato" &&
+      $(grep -c -- '-connect example.ithaca.test:443' "$OPENSSL_LOG") -eq 3 ]]; then
     printf 'ok 1 - registra ed esegue il check tls v1.2\n'
     printf '1 test superato\n'
     exit 0

@@ -22,7 +22,7 @@ Toolkit interno per l'inventory, l'hardening e il Security Assessment dei server
 |------------|-------------|
 | `ithaca-check` | Security Assessment del server |
 | `ithaca-inventory` | Inventario completo hardware e software |
-| `config/ithaca.conf` | Configurazione centralizzata |
+| `config/ithaca.conf.example` | Modello pubblico della configurazione locale |
 | `core/` | Registro, runner, discovery, risultati e reporter |
 | `modules-v12/` | Moduli ufficiali Core API 1 |
 | `plugins.d/` | Plugin installabili e caricati automaticamente |
@@ -119,6 +119,18 @@ Comandi globali:
 /usr/local/sbin/ithaca-check
 /usr/local/sbin/ithaca-inventory
 ```
+
+Creare la configurazione locale partendo dal modello pubblico:
+
+```bash
+sudo cp config/ithaca.conf.example config/ithaca.conf
+sudo chmod 0600 config/ithaca.conf
+sudo editor config/ithaca.conf
+```
+
+`config/ithaca.conf` non viene tracciato da Git. Valori specifici del server,
+indirizzi e altri dati operativi devono rimanere esclusivamente nel file locale.
+Se `TLS_IP` non e impostato, i controlli TLS usano il nome di ciascun VirtualHost.
 
 ---
 

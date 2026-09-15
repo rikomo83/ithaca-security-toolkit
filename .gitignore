@@ -2,5 +2,6 @@ reports/*
 logs/*
 backups/*
 backup/*
+config/ithaca.conf
 *.log
 *.tmp

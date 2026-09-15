@@ -1,0 +1,26 @@
+#####################################
+# Ithaca Secure Baseline - esempio
+#####################################
+
+HOSTNAME="ubuntu-server"
+COMPANY="Example"
+SERVER_ROLE="Example"
+
+WEB_SERVER=""
+DATABASE=""
+POSTGRES_VERSION=""
+
+PHP="no"
+GEOSERVER="no"
+WORDPRESS="no"
+AZURE_ARC="no"
+FAIL2BAN="no"
+UFW="no"
+HETZNER="no"
+
+# Endpoint opzionale per i test TLS. Se vuoto, viene usato il nome del VirtualHost.
+TLS_IP=""
+
+BACKUP=""
+REPORTS="/opt/ithaca-security/reports"
+LOGS="/opt/ithaca-security/logs"

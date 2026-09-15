@@ -35,7 +35,8 @@ La migrazione deve essere incrementale. In ogni fase `sudo ithaca-check` deve co
 │   ├── ithaca-check
 │   └── ithaca-inventory
 ├── config/
-│   ├── ithaca.conf
+│   ├── ithaca.conf.example
+│   ├── ithaca.conf          # locale, escluso da Git
 │   └── conf.d/
 │       └── *.conf
 ├── core/
@@ -244,6 +245,9 @@ Dalla priorità minore alla maggiore:
 2. `/opt/ithaca-security/config/ithaca.conf`;
 3. `/opt/ithaca-security/config/conf.d/*.conf`, in ordine lessicografico;
 4. opzioni CLI consentite.
+
+Il repository distribuisce soltanto `config/ithaca.conf.example`. La
+configurazione effettiva e specifica dell'host resta locale ed e esclusa da Git.
 
 Le variabili d’ambiente non sovrascrivono automaticamente la configurazione, salvo quelle esplicitamente documentate (`ITHACA_BASE_DIR`, `ITHACA_CONFIG`, `ITHACA_PLUGIN_DIR`) e solo quando l’esecuzione non è privilegiata o dopo validazione.
 
