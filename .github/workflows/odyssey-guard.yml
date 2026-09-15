@@ -1,0 +1,50 @@
+name: Odyssey Guard
+
+on:
+  push:
+    branches:
+      - master
+      - "feature/**"
+      - "fix/**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: odyssey-guard-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-22.04
+          - ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Validate Bash syntax
+        shell: bash
+        run: |
+          status=0
+          while IFS= read -r -d '' file; do
+            if head -n 1 "$file" | grep -Eq '^#!.*[/ ]bash([[:space:]]|$)'; then
+              bash -n "$file" || status=1
+            fi
+          done < <(find bin core modules modules-v12 tests -type f -print0)
+          exit "$status"
+
+      - name: Run complete test suite
+        shell: bash
+        run: bash tests/run.sh
