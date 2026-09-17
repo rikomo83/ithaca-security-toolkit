@@ -8,8 +8,7 @@ Thank you for helping improve Ithaca Security Toolkit.
 - Base changes on `master` and keep each pull request focused.
 - Never commit credentials, private keys, public production addresses,
   internal hostnames, generated reports or `config/ithaca.conf`.
-- Use neutral examples such as `example.com`, `192.0.2.0/24`,
-  `198.51.100.0/24` or `203.0.113.0/24`.
+- Use neutral examples such as `example.com` or another clearly fictional placeholder.
 
 ## Development workflow
 
