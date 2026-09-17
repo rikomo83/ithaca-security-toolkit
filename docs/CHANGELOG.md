@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Licenza open source Apache 2.0.
+- README principale, politica di sicurezza e guida ai contributi.
+- Test di regressione per i metadati open source.
+
 ## v1.2.0 "Odyssey" - 2026-09-14
 
 ### Released
