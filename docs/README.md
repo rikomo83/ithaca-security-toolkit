@@ -146,4 +146,5 @@ Consultare il file:
 
 # Licenza
 
-Toolkit interno ITHACA.
+Ithaca Security Toolkit e distribuito come software open source secondo i
+termini della [Apache License 2.0](../LICENSE).
