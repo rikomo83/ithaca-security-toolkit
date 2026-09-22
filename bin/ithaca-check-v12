@@ -22,6 +22,11 @@ ITHACA_RUN_ID="$NOW-$$"
 export ITHACA_RUN_ID
 
 mkdir -p "$REPORT_DIR"
+source "$ITHACA_BASE_DIR/core/report-file.sh"
+_ithaca_prepare_text_report "$REPORT" || {
+    printf 'Impossibile preparare il report testuale: %s\n' "$REPORT" >&2
+    exit 4
+}
 exec > >(tee "$REPORT") 2>&1
 
 # Sentinel-compatible output retained while v1.1 remains the default engine.
