@@ -8,6 +8,13 @@
 - README principale, politica di sicurezza e guida ai contributi.
 - Test di regressione per i metadati open source.
 
+### Fixed
+
+- Il check firewall riconosce policy restrittive gestite tramite UFW, nftables
+  o iptables e restituisce risultati controllati se le sonde falliscono.
+- I report testuali vengono creati con permessi `0640` indipendentemente dalla
+  umask del processo chiamante.
+
 ## v1.2.0 "Odyssey" - 2026-09-14
 
 ### Released
