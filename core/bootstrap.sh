@@ -7,6 +7,8 @@ fi
 
 # shellcheck source=core/errors.sh
 source "$ITHACA_BASE_DIR/core/errors.sh"
+# shellcheck source=core/config.sh
+source "$ITHACA_BASE_DIR/core/config.sh"
 # shellcheck source=core/logger.sh
 source "$ITHACA_BASE_DIR/core/logger.sh"
 # shellcheck source=core/registry.sh

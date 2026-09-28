@@ -10,9 +10,10 @@ ITHACA_BASE_DIR="${ITHACA_BASE_DIR:-/opt/ithaca-security}"
 export ITHACA_BASE_DIR
 CONF="$ITHACA_BASE_DIR/config/ithaca.conf"
 
-[[ -f "$CONF" ]] && source "$CONF"
+source "$ITHACA_BASE_DIR/core/config.sh"
+config_load "$CONF"
 
-REPORT_DIR="${REPORTS:-$ITHACA_BASE_DIR/reports}"
+REPORT_DIR="$(config_get REPORTS "$ITHACA_BASE_DIR/reports")"
 NOW="$(date '+%Y-%m-%d_%H-%M-%S')"
 REPORT="$REPORT_DIR/check-$NOW.txt"
 LATEST="$REPORT_DIR/check-latest.txt"

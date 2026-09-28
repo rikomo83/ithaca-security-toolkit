@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 
 check_azurearc_status() {
+    if ! config_is_enabled AZURE_ARC no; then
+        result_skip "azurearc.status" "Azure Arc non previsto dal profilo"
+        return
+    fi
+
     if systemctl is-active --quiet himdsd ||
        systemctl is-active --quiet gcad ||
        systemctl is-active --quiet arcproxyd; then

@@ -11,6 +11,7 @@ source "$ITHACA_BASE_DIR/core/runner.sh"
 CERT_DAYS=90
 
 certbot() {
+    printf '  Certificate Name: example.ithaca.test\n'
     printf '  Expiry Date: 2026-12-01 00:00:00+00:00 VALID: (%s days)\n' "$CERT_DAYS"
 }
 
