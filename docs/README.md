@@ -21,6 +21,7 @@ Toolkit interno per l'inventory, l'hardening e il Security Assessment dei server
 | Componente | Descrizione |
 |------------|-------------|
 | `ithaca-check` | Security Assessment del server |
+| `ithaca-check setup` | Piano e installazione assistita dei componenti previsti |
 | `ithaca-inventory` | Inventario completo hardware e software |
 | `config/ithaca.conf.example` | Modello pubblico della configurazione locale |
 | `core/` | Registro, runner, discovery, risultati e reporter |
@@ -39,6 +40,24 @@ sudo ithaca-check
 
 sudo ithaca-inventory
 ```
+
+Per confrontare il profilo configurato con i componenti installati, senza
+modificare il server:
+
+```bash
+sudo ithaca-check setup
+```
+
+Dopo aver verificato il piano, i soli pacchetti e servizi supportati possono
+essere installati con conferma esplicita:
+
+```bash
+sudo ithaca-check setup --apply
+```
+
+L'opzione `--yes` evita la domanda interattiva ed e riservata
+all'automazione controllata. Il setup non modifica SSH, non abilita UFW e non
+esegue automaticamente l'onboarding di GeoServer o Azure Arc.
 
 `ithaca-check` usa il motore v1.2 per impostazione predefinita. Per eseguire
 temporaneamente il motore v1.1 Sentinel:
@@ -131,6 +150,9 @@ sudo editor config/ithaca.conf
 `config/ithaca.conf` non viene tracciato da Git. Valori specifici del server,
 indirizzi e altri dati operativi devono rimanere esclusivamente nel file locale.
 Se `TLS_IP` non e impostato, i controlli TLS usano il nome di ciascun VirtualHost.
+I componenti non previsti dal profilo locale producono risultati `SKIP`, senza
+penalizzare lo score. La configurazione viene interpretata come dati e non
+eseguita come script shell.
 
 ---
 

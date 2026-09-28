@@ -1,0 +1,216 @@
+#!/usr/bin/env bash
+set -u
+
+ITHACA_BASE_DIR="${ITHACA_BASE_DIR:-/opt/ithaca-security}"
+CONF="$ITHACA_BASE_DIR/config/ithaca.conf"
+
+source "$ITHACA_BASE_DIR/core/config.sh"
+
+declare -ag SETUP_PACKAGES=()
+declare -ag SETUP_SERVICES=()
+declare -ag SETUP_MANUAL=()
+
+setup_usage() {
+    cat <<'EOF'
+Uso: ithaca-check setup [--plan] [--apply] [--yes]
+
+  --plan   mostra le azioni necessarie senza modificare il sistema (default)
+  --apply  installa e avvia soltanto i componenti automatici previsti dal profilo
+  --yes    conferma non interattiva; valido solo insieme a --apply
+
+SSH, regole firewall, GeoServer e Azure Arc non vengono modificati automaticamente.
+EOF
+}
+
+package_installed() {
+    dpkg-query -W -f='${Status}' "$1" 2>/dev/null | grep -q '^install ok installed$'
+}
+
+service_active() {
+    systemctl is-active --quiet "$1" 2>/dev/null
+}
+
+geoserver_active() {
+    ss -tulpn 2>/dev/null | grep -q ':8080' &&
+        pgrep -f java >/dev/null 2>&1
+}
+
+azurearc_active() {
+    service_active himdsd || service_active gcad || service_active arcproxyd
+}
+
+setup_add_automatic() {
+    local label="$1"
+    local package_name="$2"
+    local service_name="$3"
+
+    if package_installed "$package_name"; then
+        if [[ -n "$service_name" ]] && service_active "$service_name"; then
+            printf 'OK     %-14s installato e attivo\n' "$label"
+        elif [[ -n "$service_name" ]]; then
+            printf 'AZIONE %-14s avviare e abilitare %s\n' "$label" "$service_name"
+            SETUP_SERVICES+=("$service_name")
+        else
+            printf 'OK     %-14s installato\n' "$label"
+        fi
+    else
+        printf 'AZIONE %-14s installare il pacchetto %s\n' "$label" "$package_name"
+        SETUP_PACKAGES+=("$package_name")
+        [[ -n "$service_name" ]] && SETUP_SERVICES+=("$service_name")
+    fi
+}
+
+setup_build_plan() {
+    local web_server=""
+    local database=""
+
+    SETUP_PACKAGES=()
+    SETUP_SERVICES=()
+    SETUP_MANUAL=()
+    config_load "$CONF"
+
+    web_server="$(config_get WEB_SERVER '')"
+    database="$(config_get DATABASE '')"
+
+    printf 'Profilo: WEB_SERVER=%s DATABASE=%s GEOSERVER=%s AZURE_ARC=%s FAIL2BAN=%s UFW=%s\n\n' \
+        "${web_server:-nessuno}" \
+        "${database:-nessuno}" \
+        "$(config_get GEOSERVER no)" \
+        "$(config_get AZURE_ARC no)" \
+        "$(config_get FAIL2BAN no)" \
+        "$(config_get UFW no)"
+
+    case "${web_server,,}" in
+        apache) setup_add_automatic "Apache" apache2 apache2 ;;
+        nginx)  setup_add_automatic "Nginx" nginx nginx ;;
+        "")     printf 'SKIP   %-14s nessun web server previsto\n' "Web server" ;;
+        *)      SETUP_MANUAL+=("Web server non supportato automaticamente: $web_server") ;;
+    esac
+
+    case "${database,,}" in
+        postgresql) setup_add_automatic "PostgreSQL" postgresql postgresql ;;
+        "")         printf 'SKIP   %-14s nessun database previsto\n' "Database" ;;
+        *)          SETUP_MANUAL+=("Database non supportato automaticamente: $database") ;;
+    esac
+
+    if config_is_enabled FAIL2BAN no; then
+        setup_add_automatic "Fail2Ban" fail2ban fail2ban
+    else
+        printf 'SKIP   %-14s non previsto dal profilo\n' "Fail2Ban"
+    fi
+
+    if config_is_enabled UFW no; then
+        if package_installed ufw; then
+            if service_active ufw; then
+                printf 'OK     %-14s installato e attivo; regole non modificate\n' "UFW"
+            else
+                printf 'MANUALE %-13s installato ma non attivo\n' "UFW"
+                SETUP_MANUAL+=("UFW: verificare accesso SSH e policy prima di eseguire 'ufw enable'")
+            fi
+        else
+            printf 'AZIONE %-14s installare il pacchetto ufw; attivazione manuale\n' "UFW"
+            SETUP_PACKAGES+=(ufw)
+            SETUP_MANUAL+=("UFW: verificare accesso SSH e policy prima di eseguire 'ufw enable'")
+        fi
+    else
+        printf 'SKIP   %-14s UFW non previsto; firewall esistente lasciato invariato\n' "UFW"
+    fi
+
+    if config_is_enabled GEOSERVER no; then
+        if geoserver_active; then
+            printf 'OK     %-14s processo Java e porta 8080 rilevati\n' "GeoServer"
+        else
+            SETUP_MANUAL+=("GeoServer: installazione manuale richiesta (versione, Java e percorso dati)")
+        fi
+    else
+        printf 'SKIP   %-14s non previsto dal profilo\n' "GeoServer"
+    fi
+
+    if config_is_enabled AZURE_ARC no; then
+        if azurearc_active; then
+            printf 'OK     %-14s almeno un servizio Arc attivo\n' "Azure Arc"
+        else
+            SETUP_MANUAL+=("Azure Arc: onboarding manuale richiesto con credenziali e tenant autorizzati")
+        fi
+    else
+        printf 'SKIP   %-14s non previsto dal profilo\n' "Azure Arc"
+    fi
+
+    if (( ${#SETUP_MANUAL[@]} > 0 )); then
+        printf '\nInterventi manuali:\n'
+        printf '  - %s\n' "${SETUP_MANUAL[@]}"
+    fi
+}
+
+setup_apply() {
+    local assume_yes="$1"
+    local answer=""
+    local service_name=""
+
+    if (( ${#SETUP_PACKAGES[@]} == 0 && ${#SETUP_SERVICES[@]} == 0 )); then
+        printf '\nNessuna azione automatica necessaria.\n'
+        return 0
+    fi
+
+    printf '\nAzioni automatiche: %s pacchetti, %s servizi.\n' \
+        "${#SETUP_PACKAGES[@]}" "${#SETUP_SERVICES[@]}"
+
+    if [[ "$assume_yes" != yes ]]; then
+        read -r -p "Procedere? Scrivi SI per confermare: " answer
+        [[ "$answer" == "SI" ]] || {
+            printf 'Operazione annullata.\n'
+            return 2
+        }
+    fi
+
+    if (( ${#SETUP_PACKAGES[@]} > 0 )); then
+        DEBIAN_FRONTEND=noninteractive apt-get update
+        DEBIAN_FRONTEND=noninteractive apt-get install -y -- "${SETUP_PACKAGES[@]}"
+    fi
+
+    for service_name in "${SETUP_SERVICES[@]}"; do
+        systemctl enable --now "$service_name"
+    done
+
+    printf '\nSetup automatico completato. Rieseguire: sudo ithaca-check\n'
+}
+
+main() {
+    local mode=plan
+    local assume_yes=no
+
+    while (( $# > 0 )); do
+        case "$1" in
+            --plan) mode=plan ;;
+            --apply) mode=apply ;;
+            --yes) assume_yes=yes ;;
+            -h|--help) setup_usage; return 0 ;;
+            *) printf 'Argomento non valido: %s\n' "$1" >&2; setup_usage >&2; return 3 ;;
+        esac
+        shift
+    done
+
+    [[ "$EUID" -eq 0 ]] || {
+        printf 'Esegui con sudo: sudo ithaca-check setup\n' >&2
+        return 1
+    }
+    [[ -f "$CONF" ]] || {
+        printf 'Configurazione assente: %s\n' "$CONF" >&2
+        return 4
+    }
+    [[ "$assume_yes" == no || "$mode" == apply ]] || {
+        printf '--yes richiede --apply\n' >&2
+        return 3
+    }
+    command -v apt-get >/dev/null 2>&1 || {
+        printf 'SETUP automatico supportato solo su sistemi Debian/Ubuntu.\n' >&2
+        return 4
+    }
+
+    setup_build_plan
+    [[ "$mode" == plan ]] || setup_apply "$assume_yes"
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    main "$@"
+fi

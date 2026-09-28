@@ -7,6 +7,11 @@
 - Licenza open source Apache 2.0.
 - README principale, politica di sicurezza e guida ai contributi.
 - Test di regressione per i metadati open source.
+- Comando `ithaca-check setup` con piano predefinito non distruttivo,
+  installazione esplicita dei pacchetti supportati e passaggi ad alto rischio
+  lasciati manuali.
+- API di lettura sicura della configurazione, senza esecuzione del file come
+  script shell.
 
 ### Fixed
 
@@ -14,6 +19,10 @@
   o iptables e restituisce risultati controllati se le sonde falliscono.
 - I report testuali vengono creati con permessi `0640` indipendentemente dalla
   umask del processo chiamante.
+- Apache/TLS, PostgreSQL, GeoServer, Azure Arc e Fail2Ban producono `SKIP`
+  quando non sono applicabili al profilo dichiarato.
+- Il controllo certificati produce `SKIP` se Certbot o certificati gestiti non
+  sono presenti, evitando falsi risultati positivi.
 
 ## v1.2.0 "Odyssey" - 2026-09-14
 
