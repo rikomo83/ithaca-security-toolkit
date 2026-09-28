@@ -3,6 +3,12 @@
 check_fail2ban_status() {
     local jails=""
 
+    if ! config_is_enabled FAIL2BAN no; then
+        result_skip "fail2ban.status" "Fail2Ban non previsto dal profilo"
+        return
+    fi
+
+
     if systemctl is-active --quiet fail2ban; then
         jails="$(fail2ban-client status 2>/dev/null | awk -F: '/Number of jail/ {gsub(/ /,"",$2); print $2}')"
         result_ok "fail2ban.status" "Fail2Ban attivo (${jails:-?} jail)"

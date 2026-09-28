@@ -7,6 +7,7 @@ export ITHACA_BASE_DIR
 
 source "$ITHACA_BASE_DIR/core/bootstrap.sh"
 source "$ITHACA_BASE_DIR/core/runner.sh"
+ITHACA_CONFIG_VALUES[GEOSERVER]="yes"
 
 GEOSERVER_PORT=yes
 GEOSERVER_JAVA=yes

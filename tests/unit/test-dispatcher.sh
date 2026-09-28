@@ -19,9 +19,15 @@ printf '%s\n' \
     'printf "v12:%s\\n" "$*"' \
     > "$TEST_ROOT/bin/ithaca-check-v12"
 
+printf '%s\n' \
+    '#!/usr/bin/env bash' \
+    'printf "setup:%s\\n" "$*"' \
+    > "$TEST_ROOT/bin/ithaca-setup"
+
 chmod 0755 \
     "$TEST_ROOT/bin/ithaca-check-legacy" \
-    "$TEST_ROOT/bin/ithaca-check-v12"
+    "$TEST_ROOT/bin/ithaca-check-v12" \
+    "$TEST_ROOT/bin/ithaca-setup"
 
 failures=0
 
@@ -33,6 +39,9 @@ output="$(ITHACA_ENGINE=legacy ITHACA_BASE_DIR="$TEST_ROOT" "$DISPATCHER" rollba
 
 output="$(ITHACA_ENGINE=v12 ITHACA_BASE_DIR="$TEST_ROOT" "$DISPATCHER" explicit)"
 [[ "$output" == "v12:explicit" ]] || failures=$((failures + 1))
+
+output="$(ITHACA_BASE_DIR="$TEST_ROOT" "$DISPATCHER" setup --plan)"
+[[ "$output" == "setup:--plan" ]] || failures=$((failures + 1))
 
 set +e
 output="$(ITHACA_ENGINE=invalid ITHACA_BASE_DIR="$TEST_ROOT" "$DISPATCHER" 2>&1)"
@@ -46,7 +55,8 @@ if (( failures == 0 )); then
     printf 'ok 1 - usa v1.2 come motore predefinito\n'
     printf 'ok 2 - mantiene il rollback esplicito a Sentinel\n'
     printf 'ok 3 - inoltra gli argomenti e rifiuta motori non validi\n'
-    printf '3 test superati\n'
+    printf 'ok 4 - inoltra il comando setup\n'
+    printf '4 test superati\n'
     exit 0
 fi
 

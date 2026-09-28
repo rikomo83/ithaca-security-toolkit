@@ -6,6 +6,16 @@ check_tls_protocols() {
     local tls_target=""
     local tls1_output=""
 
+    if ! config_equals WEB_SERVER apache; then
+        result_skip "tls.protocols" "TLS Apache non applicabile al profilo"
+        return
+    fi
+
+    if ! command -v apache2ctl >/dev/null 2>&1; then
+        result_skip "tls.protocols" "Apache non installato: VirtualHost TLS non verificabili"
+        return
+    fi
+
     hosts="$(apache2ctl -S 2>/dev/null |
         awk '/port 443 namevhost/ {print $4}' |
         sort -u)"
@@ -16,7 +26,7 @@ check_tls_protocols() {
     fi
 
     for host in $hosts; do
-        tls_target="${TLS_IP:-$host}"
+        tls_target="$(config_get TLS_IP "$host")"
 
         if echo | openssl s_client -connect "$tls_target:443" -servername "$host" -tls1_2 >/dev/null 2>&1; then
             result_ok "tls.protocols" "$host TLS 1.2 attivo"

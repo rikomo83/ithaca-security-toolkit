@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 
 check_postgres_service() {
+    if ! config_equals DATABASE postgresql; then
+        result_skip "postgres.service" "PostgreSQL non previsto dal profilo"
+        return
+    fi
+
     if systemctl is-active --quiet postgresql; then
         result_ok "postgres.service" "PostgreSQL attivo"
     else
@@ -10,6 +15,11 @@ check_postgres_service() {
 
 check_postgres_listener() {
     local sockets=""
+
+    if ! config_equals DATABASE postgresql; then
+        result_skip "postgres.listener" "PostgreSQL non previsto dal profilo"
+        return
+    fi
 
     sockets="$(ss -tulpn 2>/dev/null || true)"
     if grep -q "127.0.0.1:5432" <<< "$sockets"; then

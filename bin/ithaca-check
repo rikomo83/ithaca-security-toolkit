@@ -4,6 +4,11 @@ set -u
 BASE="${ITHACA_BASE_DIR:-/opt/ithaca-security}"
 ENGINE="${ITHACA_ENGINE:-v12}"
 
+if [[ "${1:-}" == "setup" ]]; then
+    shift
+    exec "$BASE/bin/ithaca-setup" "$@"
+fi
+
 case "$ENGINE" in
     legacy)
         exec "$BASE/bin/ithaca-check-legacy" "$@"

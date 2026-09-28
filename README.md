@@ -30,6 +30,18 @@ sudo editor config/ithaca.conf
 sudo ithaca-check
 ```
 
+The declared server profile controls applicability: components set to `no` or
+left empty are reported as `SKIP` and do not reduce the score. Preview missing
+packages and services without changing the host with:
+
+```bash
+sudo ithaca-check setup
+```
+
+Use `sudo ithaca-check setup --apply` only after reviewing the plan. SSH,
+firewall rules, GeoServer and Azure Arc always require an explicit manual
+procedure.
+
 `config/ithaca.conf` may contain server-specific information and must never be
 committed. Review all checks and configuration on a non-production host before
 deployment.
