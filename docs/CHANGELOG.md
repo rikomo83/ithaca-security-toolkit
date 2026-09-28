@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v1.2.1 "Odyssey" - 2026-09-28
+
 ### Added
 
 - Licenza open source Apache 2.0.

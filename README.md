@@ -4,9 +4,9 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 Security assessment, inventory and hardening baseline for Ubuntu servers.
-Version **1.2.0 “Odyssey”** provides an isolated check runner, extensible
-plugins and atomic text and JSON reports while retaining an explicit rollback
-path to the v1.1 Sentinel engine.
+Version **1.2.1 “Odyssey”** adds profile-aware checks, safe configuration
+parsing and guided component setup to the isolated runner, extensible plugins
+and atomic text and JSON reports introduced in v1.2.0.
 
 ## Highlights
 
