@@ -7,12 +7,16 @@ ITHACA_BASE_DIR="$(cd "$TEST_DIR/../.." && pwd -P)"
 source "$ITHACA_BASE_DIR/VERSION"
 
 failures=0
-[[ "${VERSION:-}" == "1.2.0" ]] || failures=$((failures + 1))
+[[ "${VERSION:-}" == "1.2.1" ]] || failures=$((failures + 1))
 [[ "${CODENAME:-}" == "Odyssey" ]] || failures=$((failures + 1))
-[[ "${BUILD:-}" == "2026.09.14" ]] || failures=$((failures + 1))
+[[ "${BUILD:-}" == "2026.09.28" ]] || failures=$((failures + 1))
 [[ "${CORE_API:-}" == "1" ]] || failures=$((failures + 1))
 [[ "${REPORT_SCHEMA:-}" == "1" ]] || failures=$((failures + 1))
-grep -Fq '1.2.0 “Odyssey”' "$ITHACA_BASE_DIR/docs/README.md" ||
+grep -Fq '1.2.1 “Odyssey”' "$ITHACA_BASE_DIR/README.md" ||
+    failures=$((failures + 1))
+grep -Fq '1.2.1 “Odyssey”' "$ITHACA_BASE_DIR/docs/README.md" ||
+    failures=$((failures + 1))
+grep -Fq '## v1.2.1 "Odyssey" - 2026-09-28' "$ITHACA_BASE_DIR/docs/CHANGELOG.md" ||
     failures=$((failures + 1))
 grep -Fq 'ITHACA_ENGINE=legacy' "$ITHACA_BASE_DIR/docs/ROLLBACK-v1.2.md" ||
     failures=$((failures + 1))
