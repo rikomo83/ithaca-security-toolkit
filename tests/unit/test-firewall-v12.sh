@@ -58,7 +58,7 @@ _ithaca_run_registered_check_id "firewall.status"
 MOCK_FIREWALL_MODE=failed
 _ithaca_run_registered_check_id "firewall.status"
 
-if [[ "${#ITHACA_CHECK_IDS[@]}" == 1 &&
+if [[ "${#ITHACA_CHECK_IDS[@]}" == 6 &&
       "${ITHACA_RESULT_STATUSES[0]}" == OK &&
       "${ITHACA_RESULT_MESSAGES[0]}" == "UFW attivo" &&
       "${ITHACA_RESULT_STATUSES[1]}" == OK &&

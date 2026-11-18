@@ -19,7 +19,7 @@ _ithaca_registry_lock
 _ithaca_run_registered_check_id "ssh.password_authentication"
 _ithaca_run_registered_check_id "ssh.root_login"
 
-if [[ "${#ITHACA_CHECK_IDS[@]}" == 2 &&
+if [[ "${#ITHACA_CHECK_IDS[@]}" == 4 &&
       "${ITHACA_RESULT_STATUSES[0]}" == OK &&
       "${ITHACA_RESULT_MESSAGES[0]}" == "SSH password disabilitata" &&
       "${ITHACA_RESULT_STATUSES[1]}" == OK &&

@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+### Added
+
+- Check `firewall.ufw_rules`: policy incoming, regola SSH e gestione IPv6 di UFW.
+- Check `firewall.exposed_listeners`: servizi dell'host in ascolto su interfacce
+  pubbliche fuori da `ALLOWED_PUBLIC_PORTS`, CRITICAL per porte di database.
+- Check `firewall.docker_bypass`: porte pubblicate da Docker che UFW non
+  filtra, con stato della catena `DOCKER-USER`.
+- Check `firewall.swarm_ports`: porte di gestione Swarm esposte, con
+  segnalazione specifica per Swarm a nodo singolo.
+- Check `firewall.ipv6`: IPv6 globale non filtrato da UFW o dal firewall
+  Hetzner (`HETZNER_FILTER_IPV6`).
+- Check `ssh.hardening` (forwarding, MaxAuthTries, LoginGraceTime,
+  ClientAlive, KbdInteractive) e `ssh.allow_users`.
+- Check `fail2ban.sshd_jail`: jail sshd attiva e journalmatch coerente con
+  l'unit reale (su Ubuntu `ssh.service`; `sshd.service` è un alias e rende la
+  jail cieca).
+- Chiavi di configurazione `DOCKER`, `SSH_PORT`, `ALLOWED_PUBLIC_PORTS`,
+  `HETZNER_FILTER_IPV6`.
+- Guida `docs/DOCKER-FIREWALL.md` sul modello a livelli provider/UFW/Docker.
+
 ## v1.2.1 "Odyssey" - 2026-09-28
 
 ### Added

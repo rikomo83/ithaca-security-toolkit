@@ -23,7 +23,7 @@ source "$ITHACA_BASE_DIR/modules-v12/fail2ban.sh"
 _ithaca_registry_lock
 _ithaca_run_registered_check_id "fail2ban.status"
 
-if [[ "${#ITHACA_CHECK_IDS[@]}" == 1 &&
+if [[ "${#ITHACA_CHECK_IDS[@]}" == 2 &&
       "${ITHACA_RESULT_STATUSES[0]}" == OK &&
       "${ITHACA_RESULT_MESSAGES[0]}" == "Fail2Ban attivo (7 jail)" ]]; then
     printf 'ok 1 - registra ed esegue il check fail2ban v1.2\n'
