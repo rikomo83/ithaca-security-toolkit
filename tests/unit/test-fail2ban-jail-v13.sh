@@ -26,7 +26,7 @@ fail2ban-client() {
         "\`- Actions" \
         '   |- Currently banned: 1' \
         '   |- Total banned:     4' \
-        '   `- Banned IP list:   192.0.2.10'
+        '   `- Banned IP list:   2001:db8::10'
 }
 
 # Su Ubuntu sshd.service e un alias di ssh.service.
