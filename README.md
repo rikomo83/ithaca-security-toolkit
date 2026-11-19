@@ -57,6 +57,7 @@ version `1` and includes run metadata, individual result status and duration.
 - [Complete usage and architecture overview](docs/README.md)
 - [Technical specification](docs/TECHNICAL-SPEC-v1.2.md)
 - [Rollback procedure](docs/ROLLBACK-v1.2.md)
+- [Firewall on Docker hosts](docs/DOCKER-FIREWALL.md)
 - [Changelog](docs/CHANGELOG.md)
 - [Security policy](SECURITY.md)
 - [Contribution guide](CONTRIBUTING.md)

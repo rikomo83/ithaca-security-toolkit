@@ -69,6 +69,11 @@ sudo env ITHACA_ENGINE=legacy ithaca-check
 Le procedure operative complete sono disponibili in
 `docs/ROLLBACK-v1.2.md`.
 
+Su host con Docker, UFW non filtra le porte pubblicate dai container. I check
+`firewall.docker_bypass`, `firewall.swarm_ports` e `firewall.ipv6` e la
+procedura di attivazione sicura di UFW sono descritti in
+`docs/DOCKER-FIREWALL.md`.
+
 ---
 
 # Report

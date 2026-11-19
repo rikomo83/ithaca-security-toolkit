@@ -105,12 +105,12 @@ setup_build_plan() {
                 printf 'OK     %-14s installato e attivo; regole non modificate\n' "UFW"
             else
                 printf 'MANUALE %-13s installato ma non attivo\n' "UFW"
-                SETUP_MANUAL+=("UFW: verificare accesso SSH e policy prima di eseguire 'ufw enable'")
+                SETUP_MANUAL+=("UFW: verificare accesso SSH e policy prima di eseguire 'ufw enable'; su host Docker UFW non filtra le porte pubblicate (vedi docs/DOCKER-FIREWALL.md)")
             fi
         else
             printf 'AZIONE %-14s installare il pacchetto ufw; attivazione manuale\n' "UFW"
             SETUP_PACKAGES+=(ufw)
-            SETUP_MANUAL+=("UFW: verificare accesso SSH e policy prima di eseguire 'ufw enable'")
+            SETUP_MANUAL+=("UFW: verificare accesso SSH e policy prima di eseguire 'ufw enable'; su host Docker UFW non filtra le porte pubblicate (vedi docs/DOCKER-FIREWALL.md)")
         fi
     else
         printf 'SKIP   %-14s UFW non previsto; firewall esistente lasciato invariato\n' "UFW"

@@ -18,6 +18,16 @@ FAIL2BAN="no"
 UFW="no"
 HETZNER="no"
 
+# Docker: "auto" rileva il demone; "no" disattiva i check Docker/Swarm.
+DOCKER="auto"
+# Porta SSH e porte che possono essere raggiungibili da Internet (oltre a SSH).
+# Liste separate da virgola, intervalli ammessi (es. 80,443,8000-8010).
+SSH_PORT="22"
+ALLOWED_PUBLIC_PORTS="80,443"
+# Firewall Hetzner (Robot/Cloud): dichiarare "yes" solo dopo aver attivato
+# "Filter IPv6 packets", che non e verificabile dall'host.
+HETZNER_FILTER_IPV6="no"
+
 # Endpoint opzionale per i test TLS. Se vuoto, viene usato il nome del VirtualHost.
 TLS_IP=""
 

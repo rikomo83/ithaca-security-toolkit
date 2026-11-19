@@ -73,20 +73,28 @@ fi
 
 firewall_result_start="${#ITHACA_RESULT_STATUSES[@]}"
 section "FIREWALL"
-_ithaca_run_registered_check_id "firewall.status"
+for firewall_check_id in \
+    firewall.status firewall.ufw_rules firewall.exposed_listeners \
+    firewall.docker_bypass firewall.swarm_ports firewall.ipv6
+do
+    _ithaca_run_registered_check_id "$firewall_check_id"
+done
 _ithaca_render_results_legacy "$firewall_result_start"
 
 if [[ "${ITHACA_ADAPTER_DEBUG:-no}" == "yes" ]]; then
-    printf '[v1.2 cutover] firewall active: results=1\n' >&2
+    printf '[v1.2 cutover] firewall active: results=%s\n' \
+        "$(( ${#ITHACA_RESULT_STATUSES[@]} - firewall_result_start ))" >&2
 fi
 
 fail2ban_result_start="${#ITHACA_RESULT_STATUSES[@]}"
 section "FAIL2BAN"
 _ithaca_run_registered_check_id "fail2ban.status"
+_ithaca_run_registered_check_id "fail2ban.sshd_jail"
 _ithaca_render_results_legacy "$fail2ban_result_start"
 
 if [[ "${ITHACA_ADAPTER_DEBUG:-no}" == "yes" ]]; then
-    printf '[v1.2 cutover] fail2ban active: results=1\n' >&2
+    printf '[v1.2 cutover] fail2ban active: results=%s\n' \
+        "$(( ${#ITHACA_RESULT_STATUSES[@]} - fail2ban_result_start ))" >&2
 fi
 
 ssh_result_start="${#ITHACA_RESULT_STATUSES[@]}"
@@ -94,10 +102,13 @@ section "SSH"
 unset ITHACA_SSHD_EFFECTIVE_CONFIG
 _ithaca_run_registered_check_id "ssh.password_authentication"
 _ithaca_run_registered_check_id "ssh.root_login"
+_ithaca_run_registered_check_id "ssh.hardening"
+_ithaca_run_registered_check_id "ssh.allow_users"
 _ithaca_render_results_legacy "$ssh_result_start"
 
 if [[ "${ITHACA_ADAPTER_DEBUG:-no}" == "yes" ]]; then
-    printf '[v1.2 cutover] ssh active: results=2\n' >&2
+    printf '[v1.2 cutover] ssh active: results=%s\n' \
+        "$(( ${#ITHACA_RESULT_STATUSES[@]} - ssh_result_start ))" >&2
 fi
 
 apache_result_start="${#ITHACA_RESULT_STATUSES[@]}"
